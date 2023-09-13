@@ -1,5 +1,8 @@
 ### Hi there 👋
-
+#### I am currently studying in SIPA,Columbia
+#### Here for studying my python class and my work at Communities Speak
+#### Pronouns: She/her/hers
+#### Fun Fact: I HATE FUN FACT PART
 <!--
 **yinuoooooz/yinuoooooz** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
