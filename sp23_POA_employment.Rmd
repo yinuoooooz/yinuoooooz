@@ -119,7 +119,7 @@ df_na_rm <- filter(wrangled, !is.na(emp_ch))
 
 
 #weighted nyc as a whole
-weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+weight_by_race <- calculate_weighted_nyc(
   df = wrangled, 
   var_name = "emp_ch", 
   weights_df = race_weights, 
@@ -161,7 +161,7 @@ df_na_rm <- filter(wrangled, !is.na(emp_ch_unemp))
 
 
 #weighted nyc as a whole--race
-weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+weight_by_race <- calculate_weighted_nyc(
   df = wrangled, 
   var_name = "emp_ch_unemp", 
   weights_df = race_weights, 
@@ -203,7 +203,7 @@ df_na_rm <- filter(wrangled, !is.na(inc_pos))
 
 
 #weighted nyc as a whole--race-espondents whose income increased in the last 6 months
-weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+weight_by_race <- calculate_weighted_nyc(
   df = wrangled, 
   var_name = "inc_pos", 
   weights_df = race_weights, 
@@ -252,7 +252,7 @@ df_na_rm <- filter(wrangled, !is.na(sch_bach))
 (df_na_rm <- data.frame(count(df_na_rm,sch_bach)) %>% mutate(percent = round(100*n/sum(n), 3)) %>% mutate(label = c("no bach", "bach")))
 
 #weighted by race nyc as a whole--- proportion of respondents who have a Bachelor’s degree and above 
-weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+weight_by_race <- calculate_weighted_nyc(
   df = wrangled, 
   var_name = "sch_bach", 
   weights_df = race_weights, 
@@ -299,7 +299,7 @@ df_na_rm <- filter(wrangled, !is.na(union_bi))
 (df_na_rm <- data.frame(count(df_na_rm, union_bi)) %>% mutate(percent = round(100*n/sum(n), 3))) %>% mutate(label = c("non-labor union member", "labor union member"))
 
 #weighted by race nyc as a whole--- proportion of respondents who are members of labor unions 
-weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+weight_by_race <- calculate_weighted_nyc(
   df = wrangled, 
   var_name = "union_bi", 
   weights_df = race_weights, 
@@ -337,7 +337,7 @@ df_na_rm <- filter(wrangled, !is.na(inc_ab_med))
 (df_na_rm <- data.frame(count(df_na_rm,inc_ab_med)) %>% mutate(percent = round(100*n/sum(n), 3))) %>% mutate(label = c("income at/below med", "income above med"))
 
 #weighted by race nyc as a whole--- respondents who are earning above median income
-weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+weight_by_race <- calculate_weighted_nyc(
   df = wrangled, 
   var_name = "inc_ab_med", 
   weights_df = race_weights, 
@@ -384,7 +384,7 @@ df_na_rm <- filter(wrangled, !is.na(unem_benefits))
 (df_na_rm <- data.frame(count(df_na_rm,unem_benefits)) %>% mutate(percent = round(100*n/sum(n), 3))) %>% mutate(label = "unemployed and receiving benefits")
 
 #weighted by race nyc as a whole--- people who are unemployed and currently receiving unemployment benefits
-weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+weight_by_race <- calculate_weighted_nyc(
   df = wrangled, 
   var_name = "unem_benefits", 
   weights_df = race_weights, 
