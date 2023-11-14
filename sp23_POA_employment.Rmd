@@ -487,19 +487,17 @@ variables <- c("not_eng", "unemp_diff_lang", "unemp_diff_nav", "unemp_diff_app",
                "unemp_diff_other", "unemp_diff_tech")
 
 for (var in variables) {
-    # 显示普通表格
+ 
     table_result <- make_tables(wrangled, demographics, var)
     print(table_result)
     
-    # 显示普通条形图
     plot_result <- make_plots(wrangled, demographics, var, title = var, show = TRUE)
     print(plot_result)
-    
-    # 显示加权百分比表格
+
     weighted_percentages <- calculate_weighted_percentages(wrangled, demographics, var, race_weights, "race_weight")
     print(weighted_percentages)
     
-    # 显示加权条形图
+
     weighted_plot <- make_weighted_plots(wrangled, demographics, var, race_weights, "race_weight")
     print(weighted_plot)
 }
