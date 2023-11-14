@@ -1,0 +1,524 @@
+---
+title: "SPRING '23 POA - Employment"
+author: "Yinuo Zhou"
+date: "7/27/2023"
+output:
+  pdf_document:
+    toc: yes
+    fig_width: 7
+    fig_crop: no
+  word_document:
+    toc: yes
+  html_document:
+    toc: yes
+    df_print: paged
+---
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+source("/Users/zhouyinuo/Documents/communities-speak/repo/sp23/code/default_setup.R")
+library(readr)
+library(cli)
+library(googledrive)
+library(readxl)
+library(tidyverse)
+library(stringr)
+library(haven)
+library(rjson)
+library(googlesheets4)
+gs4_found <- gs4_find()
+library(knitr)
+
+target_census <- gs4_found %>% filter(str_detect(name, "target_demographics_sp23"))
+wrangled <- read_csv("/Users/zhouyinuo/Documents/communities-speak/repo/sp23/data/output/wrangled.csv")
+wrangled <- wrangled %>% mutate(gender = ifelse(gen == 1, "male", ifelse(gen == 2, "female", ifelse(gen == 3, "transmale", ifelse(gen == 4, "transfemale", ifelse(gen == 5, "queer", ifelse(gen == 5, "other", ifelse(gen == 6, "prefer not to say", NA))))))))
+
+wrangled <- wrangled %>% mutate(hh_child = ifelse(hh_ch_0_17_bi == 0, "No children", ifelse(hh_ch_0_17_bi == 1, "Has children",NA)))
+
+wrangled <- wrangled %>% mutate(hh_elderly = ifelse(hh_sn_65_bi == 0, "No senior citizens", ifelse(hh_sn_65_bi == 1, "Has senior citizens",NA)))
+
+wrangled <- wrangled %>% mutate(inc_level = ifelse(inc_dist == 1, "HH income below $36500", ifelse(inc_dist == 2, "HH income between $36500 and $69500",ifelse(inc_dist == 3, "HH income above $69500",NA))))
+
+wrangled <- wrangled %>% mutate(below_poverty = ifelse(below_poverty_bi == 0, "Above Poverty Level", ifelse(below_poverty_bi == 1, "Below Poverty Level",NA)))
+
+wrangled <- wrangled %>% 
+  mutate(below_median = ifelse(inc_be_med == 0, "Above Median Income", 
+                         ifelse(inc_be_med == 1, "Below Median Income", NA)))
+wrangled <- wrangled %>% 
+  mutate(whole_pop = ifelse(resi_ny == 1, "New Yorker", NA))
+
+
+race_target_census <- target_census %>% pull(id) %>%
+  read_sheet(sheet = "Race")
+race_weights <- race_target_census[!is.na(race_target_census$race_weight),
+                                   c("label", "race_weight")] #%>%
+ # mutate(across(race_weight, round, 5))
+
+# only weighting black, white, hispanic, asian -- so chaning the others to 1
+race_weights <- race_weights %>%
+  rename(race_census = label) %>%
+  filter(!grepl("indigenous", race_census)) %>%
+  filter(!grepl("native", race_census)) %>%
+  filter(!grepl("other", race_census)) %>%
+  filter(!grepl("two", race_census))
+
+# combining indigneous, native, other, and two into a single category "else"
+wrangled <- wrangled %>%
+  mutate(race_census = ifelse(grepl("indigenous", race_census), "else",
+                              race_census)) %>%
+  mutate(race_census = ifelse(grepl("native", race_census), "else",
+                              race_census)) %>%
+  mutate(race_census = ifelse(grepl("other", race_census), "else",
+                              race_census)) %>%
+  mutate(race_census = ifelse(grepl("two", race_census), "else",
+                              race_census)) %>%
+  mutate(race_census = ifelse(is.na(race_census), "else",
+                              race_census))
+
+if (!"else" %in% race_weights$race_census) {
+  race_weights <- rbind(race_weights, data.frame(race_census = "else", race_weight = 1))
+}
+
+
+
+borough_target_census <- target_census %>% pull(id) %>%
+  read_sheet(sheet = "Borough")
+borough_weights <- borough_target_census[!is.na(borough_target_census$borough_weight),
+                                   c("label", "borough_weight")] #%>%
+
+borough_weights <- borough_weights %>%
+  rename(borough = label)
+
+wrangled <- wrangled %>%
+  mutate(borough = ifelse(is.na(borough), "else",
+                              borough))
+
+if (!"else" %in% borough_weights$borough_census) {
+  borough_weights <- rbind(borough_weights, data.frame(borough = "else", borough_weight = 1))
+}
+
+
+
+source("/Users/zhouyinuo/Documents/communities-speak/repo/sp23/reports/poa/make_tables.R")
+source("/Users/zhouyinuo/Documents/communities-speak/repo/sp23/reports/poa/make_plots.R")
+source("/Users/zhouyinuo/Documents/communities-speak/repo/sp23/reports/poa/calculate_weighted_percentages.R")
+source("/Users/zhouyinuo/Documents/communities-speak/repo/sp23/reports/poa/calculate_weighted_nyc_race.R")
+source("/Users/zhouyinuo/Documents/communities-speak/repo/sp23/reports/poa/calculate_weighted_nyc_boro.R")
+
+```
+
+# 1.1) People who changed employment status or employers in the last 6 months  [18&19]
+```{r}
+
+
+wrangled <- mutate(wrangled, emp_ch = as.numeric(emp_change))
+
+#unweighted nyc as a whole 
+df_na_rm <- filter(wrangled, !is.na(emp_ch))
+(df_na_rm <- data.frame(count(df_na_rm,emp_ch)) %>% mutate(percent = round(100*n/sum(n), 3)))
+
+
+#weighted nyc as a whole
+weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+  df = wrangled, 
+  var_name = "emp_ch", 
+  weights_df = race_weights, 
+  weight_var = "race_weight", 
+  label_true = "changed employment status or employers in the last 6 months", 
+  label_false = "not changed employment status or employers in the last 6 months"
+)
+
+weight_by_race
+
+
+weight_by_boro<- calculate_weighted_nyc_boro(
+  df = wrangled, 
+  var_name = "emp_ch", 
+  weights_df = borough_weights, 
+  weight_var = "borough_weight",
+  label_true = "changed employment status or employers in the last 6 months", 
+  label_false = "not changed employment status or employers in the last 6 months"
+)
+weight_by_boro
+
+make_plots(wrangled, demographics, "emp_ch", 
+                                title = "Proportion of People who changed employment status or employers in the last 6 months")
+
+make_tables(wrangled, demographics, "emp_ch")
+
+calculate_weighted_percentages(wrangled, demographics, "emp_ch", race_weights, "race_weight")
+
+
+``` 
+
+
+# 1.2) People who are currently unemployed and were employed 6 months ago [18 & 19]
+```{r}
+wrangled <- wrangled %>% mutate(emp_ch_unemp = ifelse(emp_before_hm != 1 & emp_before_st != 1 & emp_before_re != 1 & emp_ch == 1 & emp_after_un == 1, 1, 0))
+#unweighted  nyc as a whole
+df_na_rm <- filter(wrangled, !is.na(emp_ch_unemp))
+(df_na_rm <- data.frame(count(df_na_rm,emp_ch_unemp)) %>% mutate(percent = round(100*n/sum(n), 3)))
+
+
+#weighted nyc as a whole--race
+weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+  df = wrangled, 
+  var_name = "emp_ch_unemp", 
+  weights_df = race_weights, 
+  weight_var = "race_weight", 
+  label_true = "People who are currently unemployed and were employed 6 months ago", 
+  label_false = "not the case"
+)
+
+weight_by_race
+
+#weighted nyc as a whole--boro
+weight_by_boro<- calculate_weighted_nyc_boro(
+  df = wrangled, 
+  var_name = "emp_ch_unemp", 
+  weights_df = borough_weights, 
+  weight_var = "borough_weight",
+  label_true = "People who are currently unemployed and were employed 6 months ago", 
+  label_false = "not the case"
+)
+weight_by_boro
+
+make_plots(wrangled, demographics, "emp_ch_unemp", 
+                                title = "Proportion of People who are currently unemployed and were employed 6 months ago")
+
+make_tables(wrangled, demographics, "emp_ch_unemp")
+
+calculate_weighted_percentages(wrangled, demographics, "emp_ch_unemp", race_weights, "race_weight")
+
+
+
+```
+
+
+# 1.3) Respondents whose income increased in the last 6 months were less likely to face job status changes in the last six months [17,18,19]
+```{r}
+#unweighted nyc as a whole- respondents whose income increased in the last 6 months
+df_na_rm <- filter(wrangled, !is.na(inc_pos))
+(df_na_rm <- data.frame(count(df_na_rm,inc_pos)) %>% mutate(percent = round(100*n/sum(n), 3))) %>% mutate(label = c("not the case ", "respondents whose income increased in the last 6 months"))
+
+
+#weighted nyc as a whole--race-espondents whose income increased in the last 6 months
+weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+  df = wrangled, 
+  var_name = "inc_pos", 
+  weights_df = race_weights, 
+  weight_var = "race_weight", 
+  label_true = "respondents whose income increased in the last 6 months", 
+  label_false = "not the case"
+)
+
+weight_by_race
+
+#weighted nyc as a whole--boro-respondents whose income increased in the last 6 months
+weight_by_boro<- calculate_weighted_nyc_boro(
+  df = wrangled, 
+  var_name = "inc_pos", 
+  weights_df = borough_weights, 
+  weight_var = "borough_weight",
+  label_true = "respondents whose income increased in the last 6 months", 
+  label_false = "not the case"
+)
+weight_by_boro
+
+
+make_plots(wrangled, "inc_pos", "emp_ch", show = TRUE, title = "among people who got income increased, the percentage of them facing job status changes ")
+
+make_plots(wrangled, "inc_neg", "emp_ch", show = TRUE, title = "among people who got income decreased, the percentage of them facing job status changes ")
+
+make_plots(wrangled, "inc_same", "emp_ch", show = TRUE, title = "among people who got same income, the percentage of them facing job status changes ")
+
+make_tables(wrangled, "inc_pos", "emp_ch")
+
+make_tables(wrangled, "inc_neg", "emp_ch")
+make_tables(wrangled, "inc_same", "emp_ch")
+
+calculate_weighted_percentages(wrangled, "inc_pos", "emp_ch", race_weights, "race_weight")
+calculate_weighted_percentages(wrangled, "inc_neg", "emp_ch", race_weights, "race_weight")
+calculate_weighted_percentages(wrangled, "inc_same", "emp_ch", race_weights, "race_weight")
+```
+
+
+
+# 1.4) People with at least a Bachelor’s degree were more/less likely to face job status changes in the last six months [13,18,19]
+```{r}
+#unweighted nyc as a whole- proportion of respondents who have a Bachelor’s degree and above 
+
+df_na_rm <- filter(wrangled, !is.na(sch_bach))
+(df_na_rm <- data.frame(count(df_na_rm,sch_bach)) %>% mutate(percent = round(100*n/sum(n), 3)) %>% mutate(label = c("no bach", "bach")))
+
+#weighted by race nyc as a whole--- proportion of respondents who have a Bachelor’s degree and above 
+weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+  df = wrangled, 
+  var_name = "sch_bach", 
+  weights_df = race_weights, 
+  weight_var = "race_weight", 
+  label_true = "proportion of respondents who have a Bachelor’s degree and above ", 
+  label_false = "not the case"
+)
+
+weight_by_race
+
+#weighted nyc as a whole--boro-proportion of respondents who have a Bachelor’s degree and above 
+weight_by_boro<- calculate_weighted_nyc_boro(
+  df = wrangled, 
+  var_name = "sch_bach", 
+  weights_df = borough_weights, 
+  weight_var = "borough_weight",
+  label_true = "proportion of respondents who have a Bachelor’s degree and above ", 
+  label_false = "not the case"
+)
+weight_by_boro
+
+make_plots(wrangled, "sch_bach", "emp_ch", show = TRUE, title = "the possibility of people with at least a Bachelor’s degree to face job status changes")
+make_tables(wrangled, "sch_bach", "emp_ch")
+calculate_weighted_percentages(wrangled, "inc_pos", "emp_ch", race_weights, "race_weight")
+make_weighted_plots(wrangled, "inc_pos", "emp_ch", race_weights, "race_weight")
+
+##unweighted nyc as a whole- People with at least a Bachelor’s degree were more/less likely to face job status changes in the last six months
+wrangled <- wrangled %>% mutate(adverse = ifelse(inc_neg == 1 & emp_ch == 1, 1, 0))
+
+make_plots(wrangled, "sch_bach", "adverse", show = TRUE, title = "the possibility of people with at least a Bachelor’s degree to face adverse job status changes")
+make_tables(wrangled, "sch_bach", "adverse")
+calculate_weighted_percentages(wrangled, "inc_pos", "adverse", race_weights, "race_weight")
+make_weighted_plots(wrangled,"inc_pos", "adverse", race_weights, "race_weight")
+
+
+```
+
+
+# 1.5) People who are members of labor unions were less likely to face changes in job status [13,17,19]
+```{r}
+# unweighted nyc as a whole--- proportion of respondents who are members of labor unions 
+wrangled <- wrangled %>% mutate(union_bi = ifelse(labor == 1, 1, 0))
+df_na_rm <- filter(wrangled, !is.na(union_bi))
+(df_na_rm <- data.frame(count(df_na_rm, union_bi)) %>% mutate(percent = round(100*n/sum(n), 3))) %>% mutate(label = c("non-labor union member", "labor union member"))
+
+#weighted by race nyc as a whole--- proportion of respondents who are members of labor unions 
+weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+  df = wrangled, 
+  var_name = "union_bi", 
+  weights_df = race_weights, 
+  weight_var = "race_weight", 
+  label_true = " proportion of respondents who are members of labor unions ", 
+  label_false = "not the case"
+)
+
+weight_by_race
+
+#weighted nyc as a whole--boro- proportion of respondents who are members of labor unions
+weight_by_boro<- calculate_weighted_nyc_boro(
+  df = wrangled, 
+  var_name = "union_bi", 
+  weights_df = borough_weights, 
+  weight_var = "borough_weight",
+  label_true = " proportion of respondents who are members of labor unions", 
+  label_false = "not the case"
+)
+weight_by_boro
+
+make_plots(wrangled, "union_bi", "emp_ch", show = TRUE, title = "the possibility of people who are members of labor unions to face job status changes")
+make_tables(wrangled, "union_bi", "emp_ch")
+
+calculate_weighted_percentages(wrangled, "union_bi", "emp_ch", race_weights, "race_weight")
+make_weighted_plots(wrangled,"union_bi", "emp_ch", race_weights, "race_weight")
+
+```
+
+
+#1.6)Persons whose income was at or above median income in 2022 were less likely to return to working in-person [16, 20]
+```{r}
+#unweighted data as a whole-respondents who are earning above median income
+df_na_rm <- filter(wrangled, !is.na(inc_ab_med))
+(df_na_rm <- data.frame(count(df_na_rm,inc_ab_med)) %>% mutate(percent = round(100*n/sum(n), 3))) %>% mutate(label = c("income at/below med", "income above med"))
+
+#weighted by race nyc as a whole--- respondents who are earning above median income
+weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+  df = wrangled, 
+  var_name = "inc_ab_med", 
+  weights_df = race_weights, 
+  weight_var = "race_weight", 
+  label_true = " proportion of respondents who are earning above median income ", 
+  label_false = "not the case"
+)
+
+weight_by_race
+
+#weighted nyc as a whole--boro- proportion of respondents who are earning above median income
+weight_by_boro<- calculate_weighted_nyc_boro(
+  df = wrangled, 
+  var_name = "inc_ab_med", 
+  weights_df = borough_weights, 
+  weight_var = "borough_weight",
+  label_true = " proportion of respondents who are earning above median income", 
+  label_false = "not the case"
+)
+weight_by_boro
+
+#above
+wrangled <- wrangled %>% mutate(hyb_rem = ifelse(wrk == 3 | wrk == 4, 1, 0))
+make_tables(wrangled, "inc_ab_med","hyb_rem",  show = TRUE, title = "the possibility of people who earns above median income to beworking hybrid/remote")
+make_plots(wrangled, "inc_ab_med","hyb_rem",  show = TRUE, title = "the possibility of people who earns above median income to beworking hybrid/remote")
+calculate_weighted_percentages(wrangled, "inc_ab_med","hyb_rem", race_weights, "race_weight")
+make_weighted_plots(wrangled,"inc_ab_med","hyb_rem", race_weights, "race_weight")
+
+#below
+make_plots(wrangled, "inc_be_med","hyb_rem",  show = TRUE, title = "the possibility of people who earns below median income to beworking hybrid/remote")
+
+make_tables(wrangled, "inc_be_med","hyb_rem",  show = TRUE, title = "the possibility of people who earns below median income to beworking hybrid/remote")
+calculate_weighted_percentages(wrangled, "inc_be_med","hyb_rem", race_weights, "race_weight")
+make_weighted_plots(wrangled,"inc_be_med","hyb_rem", race_weights, "race_weight")
+
+```
+
+
+# 1.7) People who are unemployed and currently receiving unemployment benefits [19 & 22]
+```{r}
+wrangled <- wrangled %>% mutate(unem_benefits = ifelse(emp_after_un ==1 & unemp_ben==1, 1, 0))
+#unweighted data-people who are unemployed and currently receiving unemployment benefits
+df_na_rm <- filter(wrangled, !is.na(unem_benefits))
+(df_na_rm <- data.frame(count(df_na_rm,unem_benefits)) %>% mutate(percent = round(100*n/sum(n), 3))) %>% mutate(label = "unemployed and receiving benefits")
+
+#weighted by race nyc as a whole--- people who are unemployed and currently receiving unemployment benefits
+weight_by_race<-weighted_percentages <- calculate_weighted_nyc(
+  df = wrangled, 
+  var_name = "unem_benefits", 
+  weights_df = race_weights, 
+  weight_var = "race_weight", 
+  label_true = " proportion of people who are unemployed and currently receiving unemployment benefits ", 
+  label_false = "not the case"
+)
+
+weight_by_race
+
+#weighted nyc as a whole--boro- proportion of people who are unemployed and currently receiving unemployment benefits
+weight_by_boro<- calculate_weighted_nyc_boro(
+  df = wrangled, 
+  var_name = "unem_benefits", 
+  weights_df = borough_weights, 
+  weight_var = "borough_weight",
+  label_true = " people who are unemployed and currently receiving unemployment benefits", 
+  label_false = "not the case"
+)
+weight_by_boro
+
+make_tables(wrangled, demographics, "unem_benefits", show = TRUE, title = "people who are unemployed and currently receiving unemployment benefits")
+make_plots(wrangled, demographics, "unem_benefits", show = TRUE, title = "unem_benefits")
+calculate_weighted_percentages(wrangled, demographics, "unem_benefits", race_weights, "race_weight")
+make_weighted_plots(wrangled, demographics, "unem_benefits", race_weights, "race_weight")
+
+```
+
+
+# 1.8)Reasons for employment change [21]
+
+```{r}
+
+emp_reas <- wrangled %>% select(starts_with("emp_reas_")) %>% colnames()
+names(emp_reas) <- emp_reas
+
+make_tables(wrangled, demographics,"emp_reas_laid")
+make_plots(wrangled, demographics,"emp_reas_laid", title=  "laid off", show = TRUE)
+calculate_weighted_percentages(wrangled, demographics, "emp_reas_laid", race_weights, "race_weight")
+make_weighted_plots(wrangled, demographics, "emp_reas_laid", race_weights, "race_weight")
+
+make_tables(wrangled, demographics,"emp_reas_fire")
+make_plots(wrangled, demographics,"emp_reas_fire", title=  "fired", show = TRUE)
+calculate_weighted_percentages(wrangled, demographics, "emp_reas_fire", race_weights, "race_weight")
+make_weighted_plots(wrangled, demographics, "emp_reas_fire", race_weights, "race_weight")
+
+make_tables(wrangled, demographics,"emp_reas_re")
+make_plots(wrangled, demographics,"emp_reas_re", title=  "chose to retire", show = TRUE)
+calculate_weighted_percentages(wrangled, demographics, "emp_reas_re", race_weights, "race_weight")
+make_weighted_plots(wrangled, demographics, "emp_reas_re", race_weights, "race_weight")
+
+
+make_tables(wrangled, demographics,"emp_reas_pay")
+make_plots(wrangled, demographics,"emp_reas_pay", title=  "sought better pay", show = TRUE)
+calculate_weighted_percentages(wrangled, demographics, "emp_reas_pay", race_weights, "race_weight")
+make_weighted_plots(wrangled, demographics, "emp_reas_pay", race_weights, "race_weight")
+
+
+make_tables(wrangled, demographics,"emp_reas_ben")
+make_plots(wrangled, demographics,"emp_reas_ben", show = TRUE, title=  "sought better benefits")
+calculate_weighted_percentages(wrangled, demographics, "emp_reas_ben", race_weights, "race_weight")
+make_weighted_plots(wrangled, demographics, "emp_reas_ben", race_weights, "race_weight")
+
+
+make_tables(wrangled, demographics,"emp_reas_covid")
+make_plots(wrangled, demographics,"emp_reas_covid", show = TRUE, title=  "covid-19 concerns at my previous job")
+calculate_weighted_percentages(wrangled, demographics, "emp_reas_covid", race_weights, "race_weight")
+make_weighted_plots(wrangled, demographics, "emp_reas_covid", race_weights, "race_weight")
+
+
+
+make_tables(wrangled,demographics, "emp_reas_new")
+make_plots(wrangled,demographics, "emp_reas_new", show = TRUE, title=  "pivoted to a new industry/career")
+calculate_weighted_percentages(wrangled, demographics, "emp_reas_new", race_weights, "race_weight")
+make_weighted_plots(wrangled, demographics, "emp_reas_new", race_weights, "race_weight")
+
+
+make_tables(wrangled,demographics, "emp_reas_train")
+make_plots(wrangled,demographics, "emp_reas_train", show = TRUE, title=  "returned to school or job training")
+calculate_weighted_percentages(wrangled, demographics, "emp_reas_train", race_weights, "race_weight")
+make_weighted_plots(wrangled, demographics, "emp_reas_train", race_weights, "race_weight")
+
+
+make_tables(wrangled,demographics, "emp_reas_other")
+make_plots(wrangled,demographics, "emp_reas_other", show = TRUE, title=  "other")
+calculate_weighted_percentages(wrangled, demographics, "emp_reas_other", race_weights, "race_weight")
+make_weighted_plots(wrangled, demographics, "emp_reas_other", race_weights, "race_weight")
+
+
+```
+
+
+# 1.9) Reasons for difficulty in accessing unemployment benefits [23]
+```{r}
+unemp_diff <- wrangled %>% select(starts_with("unemp_diff_")) %>% colnames()
+names(unemp_diff) <- unemp_diff
+
+variables <- c("not_eng", "unemp_diff_lang", "unemp_diff_nav", "unemp_diff_app", 
+               "unemp_diff_den", "unemp_diff_not_app", "unemp_diff_no_diff", 
+               "unemp_diff_other", "unemp_diff_tech")
+
+for (var in variables) {
+    # 显示普通表格
+    table_result <- make_tables(wrangled, demographics, var)
+    print(table_result)
+    
+    # 显示普通条形图
+    plot_result <- make_plots(wrangled, demographics, var, title = var, show = TRUE)
+    print(plot_result)
+    
+    # 显示加权百分比表格
+    weighted_percentages <- calculate_weighted_percentages(wrangled, demographics, var, race_weights, "race_weight")
+    print(weighted_percentages)
+    
+    # 显示加权条形图
+    weighted_plot <- make_weighted_plots(wrangled, demographics, var, race_weights, "race_weight")
+    print(weighted_plot)
+}
+
+
+
+make_plots(wrangled, demographics, "not_eng", title=  "not_eng", show = TRUE)
+make_plots(wrangled, demographics,"unemp_diff_lang", title=  "unemp_diff_lang", show = TRUE)
+make_plots(wrangled, demographics,"unemp_diff_nav", title=  "unemp_diff_nav", show = TRUE)
+make_plots(wrangled, demographics,"unemp_diff_app", title=  "unemp_diff_app", show = TRUE)
+make_plots(wrangled, demographics,"unemp_diff_den", title=  "unemp_diff_den", show = TRUE)
+make_plots(wrangled, demographics,"unemp_diff_not_app", show = TRUE, title=  "unemp_diff_not_app")
+make_plots(wrangled, demographics,"unemp_diff_no_diff", show = TRUE, title=  "unemp_diff_none")
+make_plots(wrangled,demographics, "unemp_diff_other", show = TRUE, title=  "unemp_diff_other")
+make_plots(wrangled,demographics, "unemp_diff_tech", show = TRUE, title=  "unemp_diff_tech")
+
+```
+
+
+
+
+
