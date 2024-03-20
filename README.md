@@ -1,6 +1,6 @@
 ### Hi there 👋
 #### I am currently studying in SIPA,Columbia 🧑‍🎓
-#### Here for studying my python class and my work at Communities Speak 💻
+#### Here for data-based and policy-related research
 #### Pronouns: She/her/hers ✌️
 #### Fun Fact: I HATE FUN FACT PART 😠
 <!--
