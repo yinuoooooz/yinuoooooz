@@ -1,8 +1,7 @@
 ### Hi there 👋
 #### I am currently studying in SIPA,Columbia 🧑‍🎓
-#### Here for data-based and policy-related research
+#### Here for working, data research and skill learning
 #### Pronouns: She/her/hers ✌️
-#### Fun Fact: I HATE FUN FACT PART 😠
 <!--
 **yinuoooooz/yinuoooooz** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
 
