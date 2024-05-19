@@ -1,0 +1,227 @@
+---
+title: "Risk Factors and Intracommunal Disputes Among Afghan Refugees Returning from Pakistan"
+author: 'Yinuo Zhou'
+output:
+  html_document:
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+  fig_height: 2 
+  fig_width: 4 
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+options(warn = -1)
+suppressMessages(library(glmnet, quietly=TRUE))
+suppressMessages(library(plm,quietly=TRUE))
+suppressMessages(library(gplots,quietly=TRUE))
+suppressMessages(library(car,quietly=TRUE))
+```
+### Introduction
+
+The refugee issue has emerged as one of the most pressing concerns of the international community. From developed Western countries to relatively underdeveloped nations, scarcely any part of the world has been spared from the plight of refugees. Among the various refugee crises worldwide, the one in Afghanistan has been considered particularly complex. This memo aims to introduce the challenges that refugees face in their host countries, as well as the risks and opportunities associated with repatriation to their home country. Furthermore, this memo will utilize data from A Survey of the Afghan Returnees (SAR) collected by The Asia Foundation to investigate the social and economic benefits and challenges of Afghan refugees returning from Pakistan. The objective of this memo is to provide insight for the UN and other refugee agencies in developing better policies on the issue of repatriation.
+
+
+### Part 1
+**Briefly answer the following questions:
+• List and explain three risks that refugees may experience while in other counties. 
+• List and explain three factors that may motivate refugees to return home.
+• List and explain three risks that refugees may experience after returning home.** 
+
+When refugees migrate to other countries, they typically encounter three types of risks. Firstly, discrimination is a pervasive concern. For instance, Afghan refugees who migrate to Pakistan are often viewed as a security threat, given the presence of refugee camps that provide sanctuary to terrorists, and some refugees who engage in anti-government activities. Consequently, Afghan refugees are frequently stigmatized and discriminated against, as evidenced by reports of harassment and discrimination by police and local residents in Pakistan (Malik, 2018). Secondly, the weak governance capacity of host countries can result in a lack of access to basic necessities, such as healthcare. A survey conducted in Afghanistan by SDPI found that access to healthcare is a significant challenge, particularly in Sindh and Balochistan (Asif, 2020). Finally, the uncertain citizenship status of refugees can exacerbate the risks associated with displacement. While the Pakistani authorities have granted Afghan refugees legal status as ordinary aliens, they have no obligation to extend special protection and corresponding rights under the 1951 Refugee Convention, which Pakistan has not ratified. Thus, Afghan refugees in Pakistan are primarily under the protection of UNHCR, and their rights and interests are predominantly dependent on UNHCR and international aid agencies, rather than the Pakistani government, which is responsible for providing basic humanitarian protection under international human rights law (UNHCR, 1999).
+
+Repatriation is considered a crucial mode of refugee resettlement, and its success is influenced by a combination of factors. Firstly, cash-based interventions have been used to encourage refugees to return home, such as the program launched by UNHCR in Burundi, which provided an average of $205 to each family of five in two installments. Such projects have facilitated the repatriation of refugees without increasing social tensions (UNHCR, 2012). Secondly, paid conscription has also been used to encourage refugees to return to their home countries. In Afghanistan, for example, the Taliban recruits large numbers of temporary soldiers every summer, and many impoverished refugees are enticed to return home. Lastly, psychological factors, such as emotional ties to their homeland and a desire to contribute to its reconstruction, can motivate refugees to return (Blitz, 2005).
+
+However, refugees who return to their original homes also face significant risks. Firstly, they may face renewed conflict, as refugees may have fled their home country to escape warfare, and the conflict may continue even after their repatriation, particularly in regions such as Afghanistan, which is characterized by perennial instability. Secondly, returnees may face social conflict with the host community, as the repatriation of refugees may lead to competition for public resources. Lastly, cross-cultural adaptation may be challenging, particularly for the second generation. Refugees who return to Afghanistan may have difficulty relating to the country they left behind, as their extended stay in neighboring countries may have led to changes in their dress, language, and standard of living. Additionally, the majority of the second generation may have rarely traveled to Afghanistan, and their understanding of the country is primarily derived from indirect.
+
+### Part 2
+
+**Identify the variables corresponding to ethnicity, age, economic status, and violence exposure. If you find any other variables linked to the factors/risks you noted above, add them to this list. Produce figures depicting the frequency of responses to these questions. We recommend bar charts and histograms.** 
+
+
+The variables corresponding to ethnicity, age, economic status, and violence exposure are shown in the figures below. 
+
+```{r }
+load("Returnees_TAF.rdata")
+
+da=`TAF_Returnees_W1-2_Merge_Client_Version_2`
+
+
+# head(da)
+# ethnicity
+# Set margins and font size
+par(mar = c(5,4,6,2) + 0.1, cex.lab = 1, cex.axis = 1, cex.main = 1)
+
+# Create histogram with customized axis labels
+hist(da$ethniccat,
+     col = 'lightblue',
+     main = "Distribution of Ethnicity Among Returnees",
+     xlab = "Ethnicity",
+     ylab = "Frequency",
+     border = "white",
+     xlim = c(0.5, 5),
+     xaxt = "n",
+     breaks = seq(0.5, 5.5, by = 1))
+
+# Add axis labels with proper spacing
+axis(1, at = c(1, 2, 3, 4, 5), labels = c("Pashtun", "Tajik", "Uzbek", "Hazara", "Other"), las = 2)
+
+# Increase bottom margin to prevent labels from being cut off
+par(mar = c(5,4,7,2) + 0.1, cex.lab = 1, cex.axis = 1, cex.main = 1)
+
+# Save the plot as a PNG file with a width of 12 inches and a height of 8 inches
+png("histogram.png", width = 12, height = 8, units = "in", res = 300)
+dev.off()
+
+```
+
+According to the distribution graph, most of the returnees are Pashtun, followed by Tajik and Hazara.
+
+
+```{r }
+# Age
+par(mfrow = c(1,1))
+hist(da$agecat,
+     col = 'lightblue', 
+     main = "",
+     xlab = "Age",
+     ylab = "Frequency",
+     border = "white",
+     xlim = c(0.5, 5.5),
+     breaks = seq(0.5, 5.5, by = 1),
+     xaxt = "n",
+     yaxt = "n")
+
+axis(1, at = c(1, 2, 3, 4, 5), labels = c("18-25", "26-35", "36-45", "46-55", "55+"), las = 2, font = 2)
+axis(2, las = 1)
+
+mtext("Distribution of Age Among Returnees", font = 2, cex = 1.2, line = 0.5)
+box()
+
+```
+
+There were 8,061 respondents in total. The largest age group was 26-35 with 2,836 respondents, representing 35.18% of the total. The next largest group was 18-25 with 2,063 respondents, representing 25.59% of the total. The smallest age group was 55+ with 408 respondents, representing 5.06% of the total.
+
+```{r }
+#income
+# define breaks to create more bins and space between the bars
+breaks <- c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+
+# adjust width to make the bars narrower
+par(mar = c(10, 4, 4, 2) + 0.1, cex.lab = 1, cex.axis = 1, cex.main = 1)
+hist(da$income_cat, breaks = breaks, col = 'lightblue', main = "Histogram of Income",
+     xlab = "    ", ylab = "Frequency", border = "white", xaxt = "n", width = 0.5)
+axis(1, at = c(0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5), 
+     labels = c("no income", "less than 2,000 afs", "2,001 - 3,000 afs", 
+                "3,001 - 5,000 afs", "5,001 - 10,000 afs", "10,001 - 15,000 afs", 
+                "15,001 - 20,000 afs", "20,001 - 25,000 afs", "25,001 - 40,000 afs", 
+                "more than 40,000 afs"), las = 2)
+
+# save the plot as a PNG file with a width of 12 inches and a height of 8 inches
+png("histogram.png", width = 12, height = 8, units = "in", res = 300)
+dev.off()
+
+```
+
+we can see that the majority of the surveyed Afghan refugees who participated in the Asia Foundation's survey were between the ages of 26 and 45, with the largest group falling within the 26-35 age range (35.18% of the total sample). In terms of income, the majority of the respondents (72.81%) reported earning less than 10,000 afs per month, with 16.39% reporting no income at all. The ethnic breakdown of the respondents is not provided in the tables given.
+
+These results suggest that a significant portion of Afghan refugees returning from Pakistan may face economic challenges, particularly with regards to earning a livable income. It is also notable that the majority of respondents fall within the working-age population, indicating that they may contribute significantly to the economy and society of Afghanistan if provided with adequate support for reintegration.
+
+```{r }
+#distpute with community
+barplot(table(as.factor(da$dispcommu)), 
+        col = "lightblue", 
+        main = "Dispute with communities",
+        xaxt = "n",
+        width = 0.8)
+axis(1, at = c(0.5, 1.5, 2.5, 3.5),
+     labels = c("Yes", "No", "Refused", "Don't know"))
+```
+
+Based on the results of the "dispcommu" variable, it appears that the majority of Afghan refugees returning from Pakistan (87.26%) have not personally experienced any type of conflict or violence since their return to Afghanistan. Only 12.27% of respondents reported experiencing such incidents, while a very small proportion refused to answer (0.07%) or didn't know (0.40%). This information suggests that while some refugees have faced security challenges upon their return, the majority have not personally experienced violence or conflict.
+
+
+
+### Part 3
+
+**We are specifically interested in one kind of risk: exposure to intracommunal disputes. These can be physical fights, verbal confrontations, or disputes over land. Generate a variable that takes the value 1 if the respondent (or their family) has experienced a dispute and 0 otherwise. Be careful with missing values and non-responses. Treat this new variable as your dependent variable and run a regression including ethnicity, age, economic status, and the other factors you noted above. What do you find? How should you interpret these coefficients?**
+
+In this question, we shall examine the variable that pertains to the extent of exposure to intracommunal disputes. Prior to conducting the analysis, we have devised a novel variable that assigns the value 1 to indicate the respondent or their family has undergone a dispute, and 0 to denote the absence of any such experience. Missing values and non-responses, represented by values 98 and 99 in the original variable, have been coded as NA. We have regarded this newly-formed variable as the dependent variable, and intend to conduct a regression analysis encompassing ethnicity, age, economic status, and marital status as independent variables.
+
+```{r}
+head(da$dispcommu)
+
+x <- da$dispcommu
+x[which(x==1)] <- 1
+x[which(x==2)] <- 0
+x[which(x==98|x==99)] <- NA
+
+da$t=x
+
+new=da[,c('t','ethniccat','agecat','income_cat','marriage')]
+new$ethniccat=as.factor(new$ethniccat)
+new$marriage=as.factor(new$marriage)
+new[is.na(new)] <- 0
+head(new$t)
+
+pre=glm(t~.,data=new,family=binomial(link="logit"))
+summary(pre)
+
+```
+
+Pashtuns (reference category) are more likely to experience intracommunal disputes than Tajiks (ethniccat2 coefficient = -0.22088, p-value = 0.00530), holding all other variables constant.
+There is some evidence to suggest that Uzbeks (ethniccat3 coefficient = -0.46158, p-value = 0.05392) and Hazaras (ethniccat4 coefficient = -0.79071, p-value < 0.001) are also less likely to experience disputes compared to Pashtuns, but the evidence is not as strong as for Tajiks.
+
+People who are categorized as "Other" (ethniccat5 coefficient = -0.87329, p-value = 0.00021) are less likely to experience disputes than Pashtuns, holding all other variables constant.
+As age increases, the likelihood of experiencing a dispute decreases (agecat coefficient = -0.10927, p-value = 0.00150).
+People with higher economic status (higher income_cat) are more likely to experience disputes (income_cat coefficient = 0.05803, p-value = 0.00158).
+Being married (marriage2 coefficient = 0.30038, p-value = 0.00789) and being Widower/Widow (marriage3 coefficient = 1.08346, p-value < 0.001) is associated with a higher likelihood of experiencing disputes, compared to being single (reference category), while being divorced (marriage4 coefficient = 1.45560, p-value = 0.23714) does not have a significant effect on the likelihood of experiencing disputes.One possible explanation is that family disputes, including intra-communal disputes, may be more likely to arise in households with multiple members, such as those with married couples or widows/widowers. This could be due to increased tensions or conflicts arising from shared living spaces and resources, differing opinions or beliefs, or power dynamics within the household. Additionally, individuals who are married or widowed may have different levels of social support or community involvement compared to single individuals, which could also influence their likelihood of experiencing a dispute.
+
+It's also worth noting that cultural and societal norms surrounding marriage and family dynamics may vary across different ethnic groups, and could potentially influence the relationship between marital status and the likelihood of experiencing a dispute. 
+
+### Part 4
+**Now consider a fixed effects regression similar to the one above. If we want to study within-province variation, what level of fixed effect would we want? Incorporate these fixed effects in the regression and see if the coefficients change. What do you find? Why would the fixed effects regression yield different results?**
+
+In this question, we undertake a fixed effects regression analysis. In order to control for potential heterogeneity within provinces, we must account for within-province variation by employing fixed effects at the province level. To achieve this, it is necessary to convert the variable ```province``` into a categorical factor and integrate it into the model dataset.
+
+```{r}
+
+new <- da[,c('t','ethniccat','agecat','income_cat','marriage','province')]
+new$ethniccat <- as.factor(new$ethniccat)
+new$marriage <- as.factor(new$marriage)
+new$province <- as.factor(new$province)
+new[is.na(new)] <- 0
+
+# specify reference level as ethniccat1
+new$ethniccat <- relevel(new$ethniccat, ref = 1)
+
+fixed.lm <- lm(t ~ ethniccat + agecat + income_cat + marriage + factor(province) - 1, data = new)
+summary(fixed.lm)
+
+# anova(fixed.lm)
+```
+
+The fixed effects regression includes the province variable as a control variable, whereas the naive regression does not. The inclusion of province in the fixed effects regression provides additional control for unobserved heterogeneity at the provincial level that could confound the relationship between the predictors and the outcome. By including province in the model, we can better isolate the effect of the individual predictors on the outcome variable.
+
+The coefficients for some of the predictors in the fixed effects regression are different from those in the naive regression. For example, the coefficient for ethniccat2 in the naive regression was -0.22088, indicating that being Tajik was associated with a lower risk of exposure to intracommunal disputes than the base ethnic  Pashtun. However, in the fixed effects regression, the coefficient for ethniccat2 is positive at 0.074776 which is higher than coefficient on ethniccat1, indicating that being Tajik is actually associated with a higher risk of exposure to intracommunal disputes relative to Pashtun after controlling for province.
+Compared to the naive regression, the coefficients in the fixed effects regression have generally decreased in magnitude, which suggests that some of the effects of the independent variables on the dependent variable were being confounded with the effects of province-level characteristics. For example, the coefficient for the variable "marriage3" (Widower/Widow) decreases from 1.08 in the naive regression to 0.12 in the fixed effects regression. This indicates that much of the positive association between being a widower/widow and the outcome variable (exposure to intracommunal disputes) was driven by province-level factors that are not accounted for in the naive regression.
+
+In other words, that is because each components of the factor variable  is absorbing the effects particular to each provinces. Once we controlling the differences across provinces, the independent variables became less significant in our new model. In the following figures we plot and different province factors.
+
+```{r fig2, fig.height = 4, fig.width = 4, fig.align = "center"}
+yhat <- fixed.lm$fitted
+
+scatterplot(yhat ~ da$marriage | da$province,  xlab ="marriage", ylab ="yhat", boxplots = FALSE,smooth = FALSE)
+abline(lm(da$t~da$marriage),lwd=3, col="red")
+scatterplot(yhat ~ da$ethniccat | da$province,  xlab ="ethniccat", ylab ="yhat", boxplots = FALSE,smooth = FALSE)
+abline(lm(da$t~da$ethniccat),lwd=3, col="red")
+
+```
+
+Based on the scatterplots with marginal distributions and regression lines above, we can observe that among the provinces included in our analysis, Kandahar (province 28) has the highest likelihood of experiencing intracommunal disputes, whereas province 18 shows a relatively lower probability of being disputed. Furthermore, the probability of experiencing disputes tends to increase for individuals who are married, widowed, or divorced compared to those who are single, and this pattern is consistent across most of the provinces. Additionally, Pashtuns have the highest likelihood of being involved in disputes compared to individuals from other ethnic groups across all provinces analyzed.
+
+### Conclusion
+
+The content discusses a survey conducted by the Asia Foundation on Afghan refugees returning from Pakistan. The survey included questions related to ethnicity, age, economic status, and violence exposure, among other factors. The results showed that the majority of the surveyed Afghan refugees were between the ages of 26 and 45 and reported earning less than 10,000 afs per month. Only a small proportion of respondents reported experiencing violence or conflict. The study also investigated the risk of exposure to intracommunal disputes, with Pashtuns being more likely to experience disputes than other ethnic groups. Additionally, the likelihood of experiencing disputes decreased with age, while higher economic status was associated with a higher likelihood of experiencing disputes. Being married or widowed was also associated with a higher likelihood of experiencing disputes compared to being single. These findings suggest that factors such as family dynamics and social support may influence the risk of experiencing disputes.
+
